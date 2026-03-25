@@ -260,7 +260,7 @@ def _transcribe_asr_chunk(model, audio_path: str, lang: str, target_lang: str, m
     if multilingual:
         kwargs["source_lang"] = lang
         kwargs["target_lang"] = target_lang
-    output = model.transcribe([audio_path], batch_size=1, **kwargs)
+    output = model.transcribe([audio_path], batch_size=1, verbose=False, **kwargs)
     result = output[0]
     return result.text if hasattr(result, "text") else str(result)
 

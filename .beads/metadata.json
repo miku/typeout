@@ -1,0 +1,7 @@
+{
+  "database": "dolt",
+  "backend": "dolt",
+  "dolt_mode": "server",
+  "dolt_database": "videototext",
+  "project_id": "eb351a2f-9e09-4f8d-8490-07c7e1ccd31d"
+}

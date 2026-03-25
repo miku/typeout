@@ -26,7 +26,7 @@ import os
 # Silence NeMo and dependency warnings before any imports
 warnings.filterwarnings("ignore")
 os.environ["NEMO_LOG_LEVEL"] = "ERROR"
-os.environ["PYTORCH_CUDA_ALLOC_CONF"] = os.environ.get("PYTORCH_CUDA_ALLOC_CONF", "")
+os.environ.pop("PYTORCH_CUDA_ALLOC_CONF", None)
 
 import click
 import sys
@@ -142,43 +142,57 @@ def print_media_info(input_path: str, input_type: str):
         pass
 
 
+def normalize_audio(input_path: str, output_path: str) -> str:
+    """Convert audio to 16kHz mono WAV."""
+    try:
+        stream = ffmpeg.input(input_path)
+        stream = ffmpeg.output(stream, output_path, ar="16000", ac=1)
+        ffmpeg.run(stream, quiet=True, overwrite_output=True)
+        return output_path
+    except ffmpeg.Error as e:
+        stderr = e.stderr.decode() if e.stderr else "Unknown error"
+        raise RuntimeError(f"FFmpeg error: {stderr}")
+
+
 def extract_audio(input_path: str, output_path: str) -> str:
-    """Extract audio from video file or URL using ffmpeg."""
+    """Extract audio from video file or URL as 16kHz mono WAV."""
     console.print(f"[dim]Extracting audio...[/dim]")
 
     if input_path.startswith(("http://", "https://")):
-        ydl_opts = {
-            "format": "bestaudio/best",
-            "postprocessors": [
-                {
-                    "key": "FFmpegExtractAudio",
-                    "preferredcodec": "wav",
-                    "preferredquality": "192",
-                }
-            ],
-            "outtmpl": output_path[:-4],  # Remove .wav extension
-            "quiet": True,
-            "no_warnings": True,
-        }
-
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            ydl.download([input_path])
-
-        base = output_path[:-4].split("/")[-1]
-        for f in os.listdir(os.path.dirname(output_path) or "."):
-            if f.startswith(base) and f.endswith(".wav"):
-                return os.path.join(os.path.dirname(output_path) or ".", f)
-
-        return output_path
-    else:
+        with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as raw:
+            raw_path = raw.name
         try:
-            stream = ffmpeg.input(input_path)
-            stream = ffmpeg.output(stream, output_path, ar="16000", ac=1)
-            ffmpeg.run(stream, quiet=True, overwrite_output=True)
-            return output_path
-        except ffmpeg.Error as e:
-            stderr = e.stderr.decode() if e.stderr else "Unknown error"
-            raise RuntimeError(f"FFmpeg error: {stderr}")
+            ydl_opts = {
+                "format": "bestaudio/best",
+                "postprocessors": [
+                    {
+                        "key": "FFmpegExtractAudio",
+                        "preferredcodec": "wav",
+                        "preferredquality": "192",
+                    }
+                ],
+                "outtmpl": raw_path[:-4],
+                "quiet": True,
+                "no_warnings": True,
+            }
+
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                ydl.download([input_path])
+
+            # Find the downloaded file
+            base = raw_path[:-4].split("/")[-1]
+            downloaded = raw_path
+            for f in os.listdir(os.path.dirname(raw_path) or "."):
+                if f.startswith(base) and f.endswith(".wav"):
+                    downloaded = os.path.join(os.path.dirname(raw_path) or ".", f)
+                    break
+
+            return normalize_audio(downloaded, output_path)
+        finally:
+            if os.path.exists(raw_path):
+                os.remove(raw_path)
+    else:
+        return normalize_audio(input_path, output_path)
 
 
 def transcribe(audio_path: str) -> str:

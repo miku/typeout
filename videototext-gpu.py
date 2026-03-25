@@ -250,28 +250,38 @@ def transcribe(audio_path: str) -> str:
         return model.tokenizer.ids_to_text(answer_ids[0].cpu())
 
     # Long audio: split into chunks
+    from rich.progress import Progress, SpinnerColumn, BarColumn, TextColumn, TimeRemainingColumn
+
     chunk_dir = tempfile.mkdtemp(prefix="vtt_chunks_")
     try:
         chunks = split_audio(audio_path, chunk_dir)
-        console.print(f"[dim]Transcribing {len(chunks)} chunks ({CHUNK_SECONDS}s each)...[/dim]")
         parts = []
-        for i, chunk_path in enumerate(chunks):
-            console.print(f"[dim]  chunk {i + 1}/{len(chunks)}[/dim]")
-            answer_ids = model.generate(
-                prompts=[
-                    [
-                        {
-                            "role": "user",
-                            "content": f"Transcribe the following: {model.audio_locator_tag}",
-                            "audio": [chunk_path],
-                        }
-                    ]
-                ],
-                max_new_tokens=1024,
-            )
-            text = model.tokenizer.ids_to_text(answer_ids[0].cpu())
-            if text.strip():
-                parts.append(text.strip())
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[dim]{task.description}[/dim]"),
+            BarColumn(),
+            TextColumn("[dim]{task.completed}/{task.total}[/dim]"),
+            TimeRemainingColumn(),
+            console=console,
+        ) as progress:
+            task = progress.add_task("Transcribing", total=len(chunks))
+            for chunk_path in chunks:
+                answer_ids = model.generate(
+                    prompts=[
+                        [
+                            {
+                                "role": "user",
+                                "content": f"Transcribe the following: {model.audio_locator_tag}",
+                                "audio": [chunk_path],
+                            }
+                        ]
+                    ],
+                    max_new_tokens=1024,
+                )
+                text = model.tokenizer.ids_to_text(answer_ids[0].cpu())
+                if text.strip():
+                    parts.append(text.strip())
+                progress.advance(task)
         return " ".join(parts)
     finally:
         shutil.rmtree(chunk_dir, ignore_errors=True)

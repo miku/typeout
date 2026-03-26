@@ -2,14 +2,14 @@
 
 Transcribe audio or video to text using ASR (Automatic Speech Recognition).
 
-Two self-contained scripts — pick the one that fits your hardware:
+Two self-contained scripts, pick the one that fits your hardware:
 
 | Script | Backend | Hardware |
 |---|---|---|
 | `avtotext.py` | OpenAI Whisper, Cohere Transcribe | CPU |
 | `avtotext-gpu.py` | NVIDIA NeMo ASR, Cohere Transcribe | NVIDIA GPU |
 
-Input can be a local file (any format ffmpeg supports — mp3, wav, flac, mp4,
+Input can be a local file (any format ffmpeg supports: mp3, wav, flac, mp4,
 mkv, webm, ...), a URL, or a YouTube video ID.
 
 ## Features
@@ -119,7 +119,7 @@ Downloaded audio (for URLs) and transcripts are cached in
 `$XDG_CACHE_HOME/avtotext/` (defaults to `~/.cache/avtotext/`). Both scripts
 share the same cache directory.
 
-- **URLs**: keyed by URL — same URL hits cache instantly
+- **URLs**: keyed by URL: same URL hits cache instantly
 - **Local files**: keyed by path + modification time + size — cache invalidates on edit
 - **Transcripts**: keyed by source + model + language — different models/languages get separate entries
 

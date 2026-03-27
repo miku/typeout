@@ -1,7 +1,7 @@
 #!/bin/bash
 # typeout - Transcribe audio/video to text
 # Amalgamation: contains both CPU and GPU versions, selects automatically
-# Version 0.4.1
+# Version 0.4.2
 # https://github.com/miku/typeout
 
 set -o pipefail
@@ -44,7 +44,7 @@ main() {
 
     extract_"$backend"_script "$script_file"
 
-    export TYPEOUT_VERSION="0.4.1"
+    export TYPEOUT_VERSION="0.4.2"
     exec uv run "$script_file" "$@"
 }
 

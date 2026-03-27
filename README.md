@@ -142,3 +142,18 @@ Use `--no-cache` to bypass, `--clear-cache` to remove all cached data.
 - `huggingface-cli login` — required for Cohere Transcribe (gated model)
 
 Models are cached in `~/.local/share/typeout/` (respects `$XDG_DATA_HOME`).
+
+## Examples
+
+```
+$ typeout --lang de https://swr-pd.ard-mcdn.de/swr/swrkultur/hoerspiel/ard-hoerspiel-speicher/2303264.mp3
+```
+
+Transcibing a 7h+ audio book [[UBIK](https://en.wikipedia.org/wiki/Ubik)] takes
+about 14 minutes on a [70W RTX 4000
+SFF](https://www.nvidia.com/content/dam/en-zz/Solutions/rtx-4000-sff/proviz-rtx-4000-sff-ada-datasheet-2616456-web.pdf) with [canary-1b-v2](https://huggingface.co/nvidia/canary-1b-v2).
+
+```
+$ typeout https://www.youtube.com/watch?v=P1qMKFMrpro # UBIK audiobook
+```
+

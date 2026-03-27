@@ -229,6 +229,17 @@ MODELS = {
     },
 }
 
+DEFAULT_MODEL = "base"
+
+
+def print_models():
+    console.print("\n[bold]Available models:[/bold]\n")
+    for name, cfg in MODELS.items():
+        default = " [green](default)[/green]" if name == DEFAULT_MODEL else ""
+        console.print(f"  [bold]{name}[/bold]{default}")
+        console.print(f"    {cfg['description']}")
+    console.print()
+
 
 # ---------------------------------------------------------------------------
 # Transcription
@@ -292,9 +303,10 @@ def _transcribe_cohere(audio_path: str, model_cfg: dict, lang: str) -> str:
 @click.option("--output", "-o", type=click.Path(), help="Write transcript to file")
 @click.option("--no-cache", is_flag=True, help="Bypass cache")
 @click.option("--clear-cache", is_flag=True, help="Remove all cached data")
+@click.option("--list-models", is_flag=True, help="List available models")
 @click.option("--check", is_flag=True, help="Check external tools")
 @click.version_option(version="0.3.0")
-def cli(input_source, model, output, no_cache, clear_cache, check, lang):
+def cli(input_source, model, output, no_cache, clear_cache, list_models, check, lang):
     """Transcribe audio or video to text using Whisper or Cohere Transcribe (CPU).
 
     INPUT_SOURCE can be a local file (any format ffmpeg supports),
@@ -304,6 +316,10 @@ def cli(input_source, model, output, no_cache, clear_cache, check, lang):
       - whisper: OpenAI Whisper (tiny, base, small, medium, large)
       - cohere-transcribe: Cohere Transcribe 2B (14 languages, requires --lang)
     """
+    if list_models:
+        print_models()
+        return
+
     if clear_cache:
         shutil.rmtree(get_cache_dir(), ignore_errors=True)
         console.print("[green]Cache cleared.[/green]")

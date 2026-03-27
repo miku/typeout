@@ -7,6 +7,7 @@ A single self-contained script that auto-detects GPU availability and uses the a
 | Backend | Hardware | Models |
 |---|---|---|
 | OpenAI Whisper | CPU/GPU | tiny, base, small, medium, large |
+| Distil-Whisper | CPU/GPU | distil-large-v3, distil-medium.en |
 | Cohere Transcribe 2B | CPU/GPU | 14 languages |
 | NVIDIA NeMo ASR | GPU | Canary-1B-v2, Canary-Qwen-2.5B, Parakeet-0.6B |
 
@@ -98,6 +99,8 @@ typeout --list-models
 | `small` | ~460MB | multilingual | Whisper |
 | `medium` | ~1.5GB | multilingual | Whisper |
 | `large` | ~2.9GB | multilingual | Whisper, highest accuracy |
+| `distil-large-v3` | ~750MB | multilingual | Distil-Whisper, 6x faster than large |
+| `distil-medium.en` | ~400MB | English only | Distil-Whisper, fast |
 | `cohere-transcribe` | ~4GB | 14 languages | High accuracy, requires HF login |
 
 ### GPU (auto-selected when NVIDIA GPU detected)
@@ -108,6 +111,8 @@ typeout --list-models
 | `canary-qwen-2.5b` | 2.5B | multilingual | NeMo, highest quality, SLM |
 | `parakeet-0.6b` | 600M | English only | NeMo, fast and lightweight |
 | `cohere-transcribe` | 2B | 14 languages | Cohere, high accuracy |
+| `distil-large-v3` | ~750MB | multilingual | Distil-Whisper, 6x faster than large |
+| `distil-medium.en` | ~400MB | English only | Distil-Whisper, fast |
 | `whisper-tiny` | ~40MB | multilingual | Whisper, fastest |
 | `whisper-base` | ~140MB | multilingual | Whisper, good balance |
 | `whisper-small` | ~460MB | multilingual | Whisper |

@@ -78,6 +78,18 @@ MODELS = {
         "multilingual": True,
         "description": "2B multilingual (14 languages), high accuracy",
     },
+    "distil-large-v3": {
+        "pretrained": "distil-whisper/distil-large-v3",
+        "api": "distil-whisper",
+        "multilingual": True,
+        "description": "Distil-Whisper large-v3 (~750MB, 6x faster than Whisper large)",
+    },
+    "distil-medium.en": {
+        "pretrained": "distil-whisper/distil-medium.en",
+        "api": "distil-whisper",
+        "multilingual": False,
+        "description": "Distil-Whisper medium English-only (~400MB, fast)",
+    },
     "whisper-tiny": {
         "pretrained": "tiny",
         "api": "whisper",
@@ -353,6 +365,36 @@ def _transcribe_whisper(audio_path: str, model_name: str, lang: str) -> str:
     return result["text"]
 
 
+def _transcribe_distil_whisper(audio_path: str, model_cfg: dict, lang: str) -> str:
+    import torch
+    from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
+
+    device = "cuda:0"
+    console.print(f"[dim]Loading model:[/dim] {model_cfg['pretrained']}")
+    model = AutoModelForSpeechSeq2Seq.from_pretrained(
+        model_cfg["pretrained"], torch_dtype=torch.float16,
+    ).to(device)
+    processor = AutoProcessor.from_pretrained(model_cfg["pretrained"])
+
+    pipe = pipeline(
+        "automatic-speech-recognition",
+        model=model,
+        tokenizer=processor.tokenizer,
+        feature_extractor=processor.feature_extractor,
+        torch_dtype=torch.float16,
+        device=device,
+    )
+
+    generate_kwargs = {}
+    if model_cfg.get("multilingual"):
+        generate_kwargs["language"] = lang
+
+    console.print("[dim]Transcribing...[/dim]")
+    result = pipe(audio_path, chunk_length_s=30, return_timestamps=True,
+                  generate_kwargs=generate_kwargs)
+    return result["text"]
+
+
 def transcribe(audio_path: str, model_name: str, lang: str, target_lang: str) -> str:
     """Load model, chunk if needed, transcribe, return text."""
     model_cfg = MODELS[model_name]
@@ -361,6 +403,9 @@ def transcribe(audio_path: str, model_name: str, lang: str, target_lang: str) ->
 
     if model_cfg["api"] == "whisper":
         return _transcribe_whisper(audio_path, model_cfg["pretrained"], lang)
+
+    if model_cfg["api"] == "distil-whisper":
+        return _transcribe_distil_whisper(audio_path, model_cfg, lang)
 
     if model_cfg["api"] == "cohere":
         return _transcribe_cohere(audio_path, model_cfg, lang)
@@ -474,7 +519,7 @@ def cli(input_source, model_name, lang, target_lang, output, no_cache, clear_cac
         console.print(f"[yellow]{model_name} is English-only, ignoring --lang {lang}[/yellow]")
         lang = "en"
         target_lang = "en"
-    if model_cfg["api"] in ("cohere", "whisper") and target_lang != lang:
+    if model_cfg["api"] in ("cohere", "whisper", "distil-whisper") and target_lang != lang:
         console.print(f"[yellow]{model_name} does not support translation, ignoring --target-lang {target_lang}[/yellow]")
         target_lang = lang
 

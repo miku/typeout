@@ -222,6 +222,18 @@ MODELS = {
     "small": {"type": "whisper", "description": "Whisper small"},
     "medium": {"type": "whisper", "description": "Whisper medium"},
     "large": {"type": "whisper", "description": "Whisper large (slowest, highest accuracy)"},
+    "distil-large-v3": {
+        "type": "distil-whisper",
+        "pretrained": "distil-whisper/distil-large-v3",
+        "multilingual": True,
+        "description": "Distil-Whisper large-v3 (~750MB, 6x faster than Whisper large)",
+    },
+    "distil-medium.en": {
+        "type": "distil-whisper",
+        "pretrained": "distil-whisper/distil-medium.en",
+        "multilingual": False,
+        "description": "Distil-Whisper medium English-only (~400MB, fast)",
+    },
     "cohere-transcribe": {
         "type": "cohere",
         "pretrained": "CohereLabs/cohere-transcribe-03-2026",
@@ -249,6 +261,9 @@ def transcribe(audio_path: str, model_name: str, lang: str = "en") -> str:
     """Transcribe audio using the specified model."""
     model_cfg = MODELS.get(model_name, {"type": "whisper"})
 
+    if model_cfg.get("type") == "distil-whisper":
+        return _transcribe_distil_whisper(audio_path, model_cfg, lang)
+
     if model_cfg.get("type") == "cohere":
         return _transcribe_cohere(audio_path, model_cfg, lang)
 
@@ -259,6 +274,36 @@ def transcribe(audio_path: str, model_name: str, lang: str = "en") -> str:
     model = whisper.load_model(model_name, download_root=str(data_dir))
     console.print("[dim]Transcribing...[/dim]")
     result = model.transcribe(audio_path, fp16=False)
+    return result["text"]
+
+
+def _transcribe_distil_whisper(audio_path: str, model_cfg: dict, lang: str) -> str:
+    import torch
+    from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
+
+    device = "cpu"
+    console.print(f"[dim]Loading model:[/dim] {model_cfg['pretrained']}")
+    model = AutoModelForSpeechSeq2Seq.from_pretrained(
+        model_cfg["pretrained"], torch_dtype=torch.float32,
+    ).to(device)
+    processor = AutoProcessor.from_pretrained(model_cfg["pretrained"])
+
+    pipe = pipeline(
+        "automatic-speech-recognition",
+        model=model,
+        tokenizer=processor.tokenizer,
+        feature_extractor=processor.feature_extractor,
+        torch_dtype=torch.float32,
+        device=device,
+    )
+
+    generate_kwargs = {}
+    if model_cfg.get("multilingual"):
+        generate_kwargs["language"] = lang
+
+    console.print("[dim]Transcribing...[/dim]")
+    result = pipe(audio_path, chunk_length_s=30, return_timestamps=True,
+                  generate_kwargs=generate_kwargs)
     return result["text"]
 
 

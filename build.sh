@@ -61,6 +61,7 @@ main() {
 
     extract_"$backend"_script "$script_file"
 
+    export TYPEOUT_VERSION="__VERSION__"
     exec uv run "$script_file" "$@"
 }
 
@@ -92,10 +93,7 @@ main "$@"
 FOOTER2
 
 # Stamp version into assembled output
-sed -i \
-    -e "s/Version [0-9][0-9.]*/Version $VERSION/g" \
-    -e "s/version=\"[0-9][0-9.]*\"/version=\"$VERSION\"/g" \
-    "$TYPEOUT"
+sed -i -e "s/__VERSION__/$VERSION/g" "$TYPEOUT"
 
 chmod +x "$TYPEOUT"
 echo "Done: $TYPEOUT"

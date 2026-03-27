@@ -12,6 +12,7 @@ $(TYPEOUT): $(TYPEOUT_CPU) $(TYPEOUT_GPU)
 
 clean:
 	rm -f $(TYPEOUT)
+	rm -rf __pycache__/
 
 dist: clean all
 

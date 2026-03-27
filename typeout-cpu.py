@@ -350,7 +350,7 @@ def _transcribe_cohere(audio_path: str, model_cfg: dict, lang: str) -> str:
 @click.option("--clear-cache", is_flag=True, help="Remove all cached data")
 @click.option("--list-models", is_flag=True, help="List available models")
 @click.option("--check", is_flag=True, help="Check external tools")
-@click.version_option(version="0.3.0")
+@click.version_option(version=os.environ.get("TYPEOUT_VERSION", "dev"))
 def cli(input_source, model, output, no_cache, clear_cache, list_models, check, lang):
     """Transcribe audio or video to text (CPU).
 

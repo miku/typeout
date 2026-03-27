@@ -1,6 +1,6 @@
 # typeout
 
-CLI utility to transcribe audio or video to text using ASR (Automatic Speech Recognition).
+[CLI utility](https://tinyurl.com/typeout) to transcribe audio or video to text using ASR (Automatic Speech Recognition).
 
 A single self-contained script that auto-detects GPU availability and uses the appropriate backend.
 

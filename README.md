@@ -13,7 +13,7 @@ A single self-contained script that auto-detects GPU availability and uses the a
 
 Input can be a local file (any format ffmpeg supports — mp3, wav, flac, mp4, mkv, webm, ...), a URL, or a YouTube video ID.
 
-![](static/76587_writer_sm.gif)
+[![](static/76587_writer_sm.gif)](https://etc.usf.edu/clipart/76500/76587/76587_writer.htm)
 
 ## Features
 

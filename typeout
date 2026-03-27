@@ -2,7 +2,7 @@
 # typeout - Transcribe audio/video to text
 # Amalgamation: contains both CPU and GPU versions, selects automatically
 # Version 0.3.0
-# https://github.com/tir/code/miku/typeout
+# https://github.com/miku/typeout
 
 set -o pipefail
 

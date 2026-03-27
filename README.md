@@ -6,10 +6,10 @@ A single self-contained script that auto-detects GPU availability and uses the a
 
 | Backend | Hardware | Models |
 |---|---|---|
-| OpenAI Whisper | CPU/GPU | tiny, base, small, medium, large |
-| Distil-Whisper | CPU/GPU | distil-large-v3, distil-medium.en |
-| Cohere Transcribe 2B | CPU/GPU | 14 languages |
-| NVIDIA NeMo ASR | GPU | Canary-1B-v2, Canary-Qwen-2.5B, Parakeet-0.6B |
+| [OpenAI Whisper](https://openai.com/index/whisper/) | CPU/GPU | tiny, base, small, medium, large |
+| [Distil-Whisper](https://github.com/huggingface/distil-whisper) | CPU/GPU | distil-large-v3, distil-medium.en |
+| [Cohere Transcribe 2B](https://huggingface.co/CohereLabs/cohere-transcribe-03-2026) | CPU/GPU | 14 languages |
+| [NVIDIA NeMo ASR](https://docs.nvidia.com/nemo-framework/user-guide/latest/nemotoolkit/asr/intro.html) | GPU | Canary-1B-v2, Canary-Qwen-2.5B, Parakeet-0.6B |
 
 Input can be a local file (any format ffmpeg supports — mp3, wav, flac, mp4, mkv, webm, ...), a URL, or a YouTube video ID.
 

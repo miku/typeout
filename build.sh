@@ -23,6 +23,14 @@ echo "" >> "$TYPEOUT"
 cat >> "$TYPEOUT" << 'BOILERPLATE'
 set -o pipefail
 
+# Check for uv
+if ! command -v uv &>/dev/null; then
+    echo "error: uv is required but not installed" >&2
+    echo "install: cargo install uv  # or: pip install uv" >&2
+    echo "  https://docs.astral.sh/uv/" >&2
+    exit 1
+fi
+
 # Detect GPU
 has_gpu() {
     [[ -d /proc/driver/nvidia ]] && command -v nvidia-smi &>/dev/null

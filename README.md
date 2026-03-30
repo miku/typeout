@@ -118,11 +118,9 @@ huggingface-cli login
 
 The `typeout` script is an **amalgamation** — it contains both CPU and GPU Python scripts embedded within it. On first run:
 
-1. Detects if NVIDIA GPU is available (`nvidia-smi`)
-2. Extracts the appropriate Python script to `~/.cache/typeout/`
+1. Detects if NVIDIA GPU is available, via `[nvidia-smi](https://docs.nvidia.com/deploy/nvidia-smi/)`
+2. Extracts the appropriate Python script to `~/.cache/typeout/` (or your custom cache home)
 3. Runs it with `uv run`, which installs dependencies automatically
-
-Subsequent runs reuse the extracted script (unless you upgrade typeout).
 
 ## Caching
 

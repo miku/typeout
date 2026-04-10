@@ -45,7 +45,7 @@ chmod +x typeout
 mv typeout ~/.local/bin/
 ```
 
-That's it. No virtualenvs, no `pip install`, no setup.py.
+That's it. No virtualenvs wrangling necessary.
 
 ## Usage
 

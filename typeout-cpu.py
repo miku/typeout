@@ -6,7 +6,7 @@
 #     "rich",
 #     "yt-dlp",
 #     "ffmpeg-python",
-#     "openai-whisper",
+#     "faster-whisper>=1.2,<2",
 #     "torch",
 #     "torchaudio",
 #     "transformers>=4.56,!=5.0.*,!=5.1.*,<6",
@@ -46,7 +46,6 @@ from pathlib import Path
 from rich.console import Console
 import yt_dlp
 import ffmpeg
-import whisper
 
 console = Console(stderr=True)
 
@@ -216,20 +215,25 @@ def prepare_audio(input_source: str, input_type: str, output_path: str) -> str:
 # ---------------------------------------------------------------------------
 
 MODELS = {
-    "tiny": {"type": "whisper", "description": "Whisper tiny (fastest, lowest accuracy)"},
-    "base": {"type": "whisper", "description": "Whisper base (default)"},
-    "small": {"type": "whisper", "description": "Whisper small"},
-    "medium": {"type": "whisper", "description": "Whisper medium"},
-    "large": {"type": "whisper", "description": "Whisper large (slowest, highest accuracy)"},
+    "tiny": {"type": "whisper", "pretrained": "tiny", "multilingual": True,
+             "description": "Whisper tiny (fastest, lowest accuracy)"},
+    "base": {"type": "whisper", "pretrained": "base", "multilingual": True,
+             "description": "Whisper base (default)"},
+    "small": {"type": "whisper", "pretrained": "small", "multilingual": True,
+              "description": "Whisper small"},
+    "medium": {"type": "whisper", "pretrained": "medium", "multilingual": True,
+               "description": "Whisper medium"},
+    "large": {"type": "whisper", "pretrained": "large-v3", "multilingual": True,
+              "description": "Whisper large-v3 (slowest, highest accuracy)"},
     "distil-large-v3": {
-        "type": "distil-whisper",
-        "pretrained": "distil-whisper/distil-large-v3",
+        "type": "whisper",
+        "pretrained": "distil-large-v3",
         "multilingual": True,
         "description": "Distil-Whisper large-v3 (~750MB, 6x faster than Whisper large)",
     },
     "distil-medium.en": {
-        "type": "distil-whisper",
-        "pretrained": "distil-whisper/distil-medium.en",
+        "type": "whisper",
+        "pretrained": "distil-medium.en",
         "multilingual": False,
         "description": "Distil-Whisper medium English-only (~400MB, fast)",
     },
@@ -258,52 +262,34 @@ def print_models():
 
 def transcribe(audio_path: str, model_name: str, lang: str = "en") -> str:
     """Transcribe audio using the specified model."""
-    model_cfg = MODELS.get(model_name, {"type": "whisper"})
-
-    if model_cfg.get("type") == "distil-whisper":
-        return _transcribe_distil_whisper(audio_path, model_cfg, lang)
+    model_cfg = MODELS.get(model_name, {"type": "whisper", "pretrained": model_name,
+                                        "multilingual": True})
 
     if model_cfg.get("type") == "cohere":
         return _transcribe_cohere(audio_path, model_cfg, lang)
 
-    # Whisper (default)
+    return _transcribe_whisper(audio_path, model_cfg, lang)
+
+
+def _transcribe_whisper(audio_path: str, model_cfg: dict, lang: str) -> str:
+    """Transcribe via faster-whisper (CTranslate2, int8 on CPU)."""
+    from faster_whisper import WhisperModel
+
     data_dir = get_data_dir() / "whisper"
     data_dir.mkdir(parents=True, exist_ok=True)
-    console.print(f"[dim]Loading Whisper model:[/dim] {model_name}")
-    model = whisper.load_model(model_name, download_root=str(data_dir))
-    console.print("[dim]Transcribing...[/dim]")
-    result = model.transcribe(audio_path, fp16=False)
-    return result["text"]
 
+    pretrained = model_cfg["pretrained"]
+    console.print(f"[dim]Loading model:[/dim] {pretrained}")
+    model = WhisperModel(pretrained, device="cpu", compute_type="int8",
+                         download_root=str(data_dir))
 
-def _transcribe_distil_whisper(audio_path: str, model_cfg: dict, lang: str) -> str:
-    import torch
-    from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
-
-    device = "cpu"
-    console.print(f"[dim]Loading model:[/dim] {model_cfg['pretrained']}")
-    model = AutoModelForSpeechSeq2Seq.from_pretrained(
-        model_cfg["pretrained"], dtype=torch.float32,
-    ).to(device)
-    processor = AutoProcessor.from_pretrained(model_cfg["pretrained"])
-
-    pipe = pipeline(
-        "automatic-speech-recognition",
-        model=model,
-        tokenizer=processor.tokenizer,
-        feature_extractor=processor.feature_extractor,
-        dtype=torch.float32,
-        device=device,
-    )
-
-    generate_kwargs = {}
+    kwargs = {}
     if model_cfg.get("multilingual"):
-        generate_kwargs["language"] = lang
+        kwargs["language"] = lang
 
     console.print("[dim]Transcribing...[/dim]")
-    result = pipe(audio_path, chunk_length_s=30, return_timestamps=True,
-                  generate_kwargs=generate_kwargs)
-    return result["text"]
+    segments, _ = model.transcribe(audio_path, **kwargs)
+    return "".join(s.text for s in segments).strip()
 
 
 def _transcribe_cohere(audio_path: str, model_cfg: dict, lang: str) -> str:

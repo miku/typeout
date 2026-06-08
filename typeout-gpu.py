@@ -335,13 +335,17 @@ def _transcribe_asr_chunk(model, audio_path: str, lang: str, target_lang: str, m
 
 
 def _transcribe_cohere(audio_path: str, model_cfg: dict, lang: str) -> str:
-    import torch
     from transformers import AutoProcessor, AutoModelForSpeechSeq2Seq
 
     device = "cuda:0"
-    processor = AutoProcessor.from_pretrained(model_cfg["pretrained"], trust_remote_code=True)
+    data_dir = get_data_dir() / "models" / model_cfg["pretrained"].replace("/", "_")
+    data_dir.mkdir(parents=True, exist_ok=True)
+
+    processor = AutoProcessor.from_pretrained(
+        model_cfg["pretrained"], trust_remote_code=True, cache_dir=str(data_dir)
+    )
     model = AutoModelForSpeechSeq2Seq.from_pretrained(
-        model_cfg["pretrained"], trust_remote_code=True
+        model_cfg["pretrained"], trust_remote_code=True, cache_dir=str(data_dir)
     ).to(device)
     model.eval()
 
@@ -349,7 +353,7 @@ def _transcribe_cohere(audio_path: str, model_cfg: dict, lang: str) -> str:
     texts = model.transcribe(
         processor=processor,
         audio_files=[audio_path],
-        language=lang,
+        language=lang or "en",
     )
     return texts[0]
 
@@ -362,12 +366,12 @@ def _transcribe_whisper(audio_path: str, model_cfg: dict, lang: str) -> str:
     data_dir.mkdir(parents=True, exist_ok=True)
 
     pretrained = model_cfg["pretrained"]
-    console.print(f"[dim]Loading model:[/dim] {pretrained}")
     model = WhisperModel(pretrained, device="cuda", compute_type="float16",
                          download_root=str(data_dir))
 
     kwargs = {}
-    if model_cfg.get("multilingual"):
+    # lang is None when the user did not pass --lang: let Whisper auto-detect.
+    if model_cfg.get("multilingual") and lang:
         kwargs["language"] = lang
 
     console.print("[dim]Transcribing...[/dim]")
@@ -394,8 +398,11 @@ def transcribe(audio_path: str, model_name: str, lang: str, target_lang: str) ->
     else:
         from nemo.collections.asr.models import ASRModel
         model = ASRModel.from_pretrained(model_name=model_cfg["pretrained"]).cuda().eval()
+        # NeMo requires an explicit source/target language; fall back to English.
+        asr_lang = lang or "en"
+        asr_target = target_lang or asr_lang
         do_chunk = lambda path: _transcribe_asr_chunk(
-            model, path, lang, target_lang, model_cfg["multilingual"]
+            model, path, asr_lang, asr_target, model_cfg["multilingual"]
         )
 
     duration = get_audio_duration(audio_path)
@@ -452,7 +459,8 @@ def print_models():
 @click.argument("input_source", required=False)
 @click.option("--model", "model_name", type=click.Choice(list(MODELS.keys())),
               default=DEFAULT_MODEL, help="ASR model")
-@click.option("--lang", default="en", help="Source language (multilingual models)")
+@click.option("--lang", default=None,
+              help="Source language (multilingual models). Omit to auto-detect (Whisper models).")
 @click.option("--target-lang", default=None, help="Target language for translation (defaults to --lang)")
 @click.option("--output", "-o", type=click.Path(), help="Write transcript to file")
 @click.option("--no-cache", is_flag=True, help="Bypass cache")
@@ -492,7 +500,7 @@ def cli(input_source, model_name, lang, target_lang, output, no_cache, clear_cac
         target_lang = lang
 
     model_cfg = MODELS[model_name]
-    if not model_cfg["multilingual"] and lang != "en":
+    if not model_cfg["multilingual"] and lang and lang != "en":
         console.print(f"[yellow]{model_name} is English-only, ignoring --lang {lang}[/yellow]")
         lang = "en"
         target_lang = "en"
@@ -512,7 +520,7 @@ def cli(input_source, model_name, lang, target_lang, output, no_cache, clear_cac
     # Cache lookup
     cache_dir = get_cache_dir()
     src_key = source_key(input_source, input_type)
-    t_key = transcript_key(src_key, model_name, lang, target_lang)
+    t_key = transcript_key(src_key, model_name, lang or "auto", target_lang or "auto")
     transcript_cache = cache_dir / "transcripts" / f"{t_key}.txt"
 
     if not no_cache and transcript_cache.exists():

@@ -114,6 +114,10 @@ typeout --list-models
 huggingface-cli login
 ```
 
+> **Note:** the `cohere-transcribe` model is loaded with `trust_remote_code=True`,
+> which executes custom Python shipped in the model repository on your machine.
+> Only enable it if you trust that repo. The Whisper and NeMo models do not use it.
+
 ## How it works
 
 The `typeout` script is an **amalgamation** — it contains both CPU and GPU Python scripts embedded within it. On first run:

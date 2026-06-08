@@ -284,7 +284,8 @@ def _transcribe_whisper(audio_path: str, model_cfg: dict, lang: str) -> str:
                          download_root=str(data_dir))
 
     kwargs = {}
-    if model_cfg.get("multilingual"):
+    # lang is None when the user did not pass --lang: let Whisper auto-detect.
+    if model_cfg.get("multilingual") and lang:
         kwargs["language"] = lang
 
     console.print("[dim]Transcribing...[/dim]")
@@ -294,8 +295,6 @@ def _transcribe_whisper(audio_path: str, model_cfg: dict, lang: str) -> str:
 
 def _transcribe_cohere(audio_path: str, model_cfg: dict, lang: str) -> str:
     """Transcribe using Cohere Transcribe model (CPU)."""
-    import torch
-
     device = "cpu"
     from transformers import AutoProcessor, AutoModelForSpeechSeq2Seq
 
@@ -315,7 +314,7 @@ def _transcribe_cohere(audio_path: str, model_cfg: dict, lang: str) -> str:
     texts = model.transcribe(
         processor=processor,
         audio_files=[audio_path],
-        language=lang,
+        language=lang or "en",
     )
     return texts[0]
 
@@ -328,8 +327,9 @@ def _transcribe_cohere(audio_path: str, model_cfg: dict, lang: str) -> str:
 @click.argument("input_source", required=False)
 @click.option("--model", default="base",
               help="Model name (use --list-models to see all)")
-@click.option("--lang", default="en",
-              help="Language code (e.g., en, es, fr, de, ja, zh, ko, ar, vi, nl, pl, pt, el, it)")
+@click.option("--lang", default=None,
+              help="Language code (e.g., en, es, fr, de, ja, zh, ko, ar, vi, nl, pl, pt, el, it). "
+                   "Omit to auto-detect (Whisper models).")
 @click.option("--output", "-o", type=click.Path(), help="Write transcript to file")
 @click.option("--no-cache", is_flag=True, help="Bypass cache")
 @click.option("--clear-cache", is_flag=True, help="Remove all cached data")
@@ -376,7 +376,7 @@ def cli(input_source, model, output, no_cache, clear_cache, list_models, check, 
     # Cache lookup
     cache_dir = get_cache_dir()
     src_key = source_key(input_source, input_type)
-    t_key = transcript_key(src_key, model, lang)
+    t_key = transcript_key(src_key, model, lang or "auto")
     transcript_cache = cache_dir / "transcripts" / f"{t_key}.txt"
 
     if not no_cache and transcript_cache.exists():

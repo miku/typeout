@@ -37,11 +37,16 @@ A shortcut to the script can be found at
 # Install uv
 cargo install --locked uv  # or: pip install uv
 
-# Download typeout
-curl -O https://raw.githubusercontent.com/miku/typeout/refs/heads/main/typeout
+# Install typeout from GitHub
+uv tool install git+https://github.com/miku/typeout
+```
 
-# Make executable and put somewhete into PATH
+Alternatively, download the self-contained script directly:
+
+```bash
+curl -O https://raw.githubusercontent.com/miku/typeout/refs/heads/main/typeout
 chmod +x typeout
+# Put the script somewhere on PATH
 mv typeout ~/.local/bin/
 ```
 

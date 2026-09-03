@@ -4,7 +4,7 @@
 # dependencies = [
 #     "click",
 #     "rich",
-#     "yt-dlp",
+#     "yt-dlp>=2026.8.19",
 #     "ffmpeg-python",
 #     "faster-whisper>=1.2,<2",
 #     "nemo_toolkit[asr]>=2.7.2,<2.8",
@@ -249,6 +249,32 @@ def normalize_audio(input_path: str, output_path: str) -> str:
         raise RuntimeError(f"FFmpeg error: {stderr}")
 
 
+# Failures that usually mean yt-dlp has fallen behind a site's delivery scheme,
+# rather than the video being genuinely gone or private.
+STALE_YT_DLP_SIGNS = (
+    "http error 403",
+    "unable to download video data",
+    "unable to extract",
+    "failed to extract",
+    "player response",
+    "nsig",
+    "signature",
+    "requested format is not available",
+)
+
+
+def _report_download_error(err: Exception):
+    """Report a yt-dlp failure and exit, hinting when it looks like a stale yt-dlp."""
+    console.print(f"[red]Download failed:[/red] {err}")
+    if any(sign in str(err).lower() for sign in STALE_YT_DLP_SIGNS):
+        console.print(
+            f"[dim]Sites change their delivery often, and the cached yt-dlp "
+            f"({yt_dlp.version.__version__}) may be too old. Update it with:[/dim]"
+        )
+        console.print(f"  uv run -P yt-dlp {__file__} --version")
+    sys.exit(1)
+
+
 def download_url(url: str, output_path: str) -> str:
     with tempfile.TemporaryDirectory(prefix="typeout_") as tmpdir:
         ydl_opts = {
@@ -264,8 +290,11 @@ def download_url(url: str, output_path: str) -> str:
             "quiet": True,
             "no_warnings": True,
         }
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            ydl.download([url])
+        try:
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                ydl.download([url])
+        except yt_dlp.utils.DownloadError as e:
+            _report_download_error(e)
         for name in os.listdir(tmpdir):
             if name.endswith(".wav"):
                 return normalize_audio(os.path.join(tmpdir, name), output_path)

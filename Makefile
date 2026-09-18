@@ -1,6 +1,6 @@
 .PHONY: all clean dist check install help upgrade-deps outdated
 
-VERSION ?= 0.5.2
+VERSION ?= 0.5.3
 TYPEOUT = typeout
 TYPEOUT_CPU = typeout-cpu.py
 TYPEOUT_GPU = typeout-gpu.py

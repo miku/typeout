@@ -62,7 +62,7 @@ extract_cpu_script() {
 #     "faster-whisper>=1.2.1,<2",
 #     "torch",
 #     "torchaudio",
-#     "transformers>=5.17.0,!=5.0.*,!=5.1.*,<6",
+#     "transformers>=5.18.0,!=5.0.*,!=5.1.*,<6",
 #     "soundfile",
 #     "librosa",
 #     "sentencepiece",

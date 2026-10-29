@@ -1,7 +1,7 @@
 #!/bin/bash
 # typeout - Transcribe audio/video to text
 # Amalgamation: contains both CPU and GPU versions, selects automatically
-# Version 0.5.4
+# Version 0.5.5
 # https://github.com/miku/typeout
 
 set -o pipefail
@@ -44,7 +44,7 @@ main() {
 
     extract_"$backend"_script "$script_file"
 
-    export TYPEOUT_VERSION="0.5.4"
+    export TYPEOUT_VERSION="0.5.5"
     exec uv run "$script_file" "$@"
 }
 
@@ -57,12 +57,12 @@ extract_cpu_script() {
 # dependencies = [
 #     "click",
 #     "rich",
-#     "yt-dlp>=2026.8.19",
+#     "yt-dlp>=2026.10.26",
 #     "ffmpeg-python",
 #     "faster-whisper>=1.2.1,<2",
 #     "torch",
 #     "torchaudio",
-#     "transformers>=5.18.0,!=5.0.*,!=5.1.*,<6",
+#     "transformers>=5.21.1,!=5.0.*,!=5.1.*,<6",
 #     "soundfile",
 #     "librosa",
 #     "sentencepiece",
@@ -518,7 +518,7 @@ extract_gpu_script() {
 # dependencies = [
 #     "click",
 #     "rich",
-#     "yt-dlp>=2026.8.19",
+#     "yt-dlp>=2026.10.26",
 #     "ffmpeg-python",
 #     "faster-whisper>=1.2.1,<2",
 #     "nemo_toolkit[asr]>=2.7.3,<2.8",

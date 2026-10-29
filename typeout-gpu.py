@@ -4,7 +4,7 @@
 # dependencies = [
 #     "click",
 #     "rich",
-#     "yt-dlp>=2026.8.19",
+#     "yt-dlp>=2026.10.26",
 #     "ffmpeg-python",
 #     "faster-whisper>=1.2.1,<2",
 #     "nemo_toolkit[asr]>=2.7.3,<2.8",
